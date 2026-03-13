@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. MClaw — Workflow Automation for Enterprise Teams</title>
+    <meta name="description" content="Dr. MClaw helps department leaders reclaim their team's time from manual processes, legacy handoffs, and spreadsheet operations — with AI automation that stays under your control.">
+    <meta property="og:title" content="Dr. MClaw — Workflow Automation for Enterprise Teams">
+    <meta property="og:description" content="Reclaim your team's time from manual processes. AI-powered workflow automation with human oversight, audit trails, and legacy system support.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='8' y1='8' x2='56' y2='56' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%230d4f42'/%3E%3Cstop offset='1' stop-color='%230a3028'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='6' y='6' width='52' height='52' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 17C22.6 17 15 24.6 15 34c0 5.8 3 11.1 7.8 14.2l2.6-5.8 2.5 9.4c1.3.5 2.7.7 4.1.7s2.8-.2 4.1-.7l2.5-9.4 2.6 5.8C46 45.1 49 39.8 49 34c0-9.4-7.6-17-17-17Z' stroke='%238fdcc0' stroke-width='2.4' fill='none'/%3E%3Ccircle cx='26' cy='32.3' r='2.2' fill='%238fdcc0'/%3E%3Ccircle cx='38' cy='32.3' r='2.2' fill='%238fdcc0'/%3E%3Cpath d='M27.2 39c1.4 1.3 3.9 1.3 5.3 0' stroke='%238fdcc0' stroke-width='1.8' stroke-linecap='round' fill='none'/%3E%3Cpath d='M32 17v-2.6M32 14.4c-1.6 0-3 1.3-3 3' stroke='%238fdcc0' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+    <style>
+        /* Heading font stack: system fonts embedded in all major browsers */
+        :root {
+            --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        :root {
+            --bg: #f3efe6;
+            --bg-strong: #e8e1d2;
+            --surface: rgba(255, 252, 245, 0.82);
+            --surface-strong: #fbf7ee;
+            --ink: #171717;
+            --muted: #635f57;
+            --line: rgba(23, 23, 23, 0.12);
+            --line-strong: rgba(23, 23, 23, 0.2);
+            --accent: #0e5b4c;
+            --accent-light: #19a07e;
+            --accent-soft: #dcefe6;
+            --warn: #b45b31;
+            --shadow: 0 30px 80px rgba(35, 26, 13, 0.12);
+            --shadow-sm: 0 8px 24px rgba(35, 26, 13, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 16px;
+            --max: 1220px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Manrope", sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at top left, rgba(14, 91, 76, 0.14), transparent 28%),
+                radial-gradient(circle at 85% 12%, rgba(180, 91, 49, 0.10), transparent 22%),
+                linear-gradient(180deg, #f8f4ea 0%, #f1eadb 52%, #eee5d5 100%);
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.06;
+            background-image:
+                linear-gradient(rgba(20, 20, 20, 0.35) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(20, 20, 20, 0.35) 1px, transparent 1px);
+            background-size: 56px 56px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.75), transparent 88%);
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .page-shell {
+            width: min(var(--max), calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        /* ── Nav ── */
+        .nav {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(16px) saturate(1.3);
+            background: rgba(243, 239, 230, 0.72);
+            border-bottom: 1px solid rgba(23, 23, 23, 0.06);
+        }
+
+        .nav-inner {
+            width: min(var(--max), calc(100% - 32px));
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            gap: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #0d4f42 0%, #0a3028 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 14px rgba(14, 91, 76, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+        }
+
+        .brand-mark svg {
+            width: 28px;
+            height: 28px;
+        }
+
+        .brand-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .brand-name {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .brand-name .dr {
+            font-family: "Playfair Display", serif;
+            font-weight: 700;
+            font-style: italic;
+            font-size: 1.15rem;
+            color: var(--accent);
+            letter-spacing: 0;
+        }
+
+        .brand-name .mclaw {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 0.02em;
+            color: var(--ink);
+        }
+
+        .brand-copy .tagline {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--muted);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 26px;
+            color: var(--muted);
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+
+        .nav-links a {
+            transition: color 180ms ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--ink);
+        }
+
+        .nav-cta {
+            padding: 11px 20px;
+            border-radius: 999px;
+            background: var(--accent);
+            color: #f0faf4;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: transform 180ms ease, box-shadow 180ms ease;
+            box-shadow: 0 4px 14px rgba(14, 91, 76, 0.25);
+        }
+
+        .nav-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(14, 91, 76, 0.35);
+        }
+
+        /* ── Hero ── */
+        .hero {
+            padding: 56px 0 36px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        .hero-copy,
+        .hero-panel,
+        .section-card,
+        .timeline,
+        .cta-band {
+            background: var(--surface);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(20px);
+        }
+
+        .hero-copy {
+            border-radius: var(--radius-xl);
+            padding: 38px 36px 32px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .hero-copy::after {
+            content: "";
+            position: absolute;
+            right: -60px;
+            top: -70px;
+            width: 260px;
+            height: 260px;
+            background: radial-gradient(circle, rgba(14, 91, 76, 0.18), transparent 65%);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: rgba(14, 91, 76, 0.08);
+            color: var(--accent);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 800;
+        }
+
+        .hero h1 {
+            margin: 22px 0 18px;
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: clamp(2.6rem, 5.5vw, 5rem);
+            line-height: 1.15;
+            letter-spacing: -0.035em;
+            max-width: 14ch;
+        }
+
+        .hero h1 em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .hero p.hero-lead {
+            margin: 0;
+            max-width: 58ch;
+            color: var(--muted);
+            font-size: 1.08rem;
+            line-height: 1.72;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 62ch;
+            color: var(--muted);
+            font-size: 1.04rem;
+            line-height: 1.75;
+        }
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-top: 28px;
+        }
+
+        .button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 22px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.94rem;
+            letter-spacing: 0.01em;
+            transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+        }
+
+        .button-primary {
+            background: var(--accent);
+            color: #f0faf4;
+            box-shadow: 0 12px 30px rgba(14, 91, 76, 0.22);
+        }
+
+        .button-primary:hover {
+            box-shadow: 0 16px 40px rgba(14, 91, 76, 0.3);
+        }
+
+        .button-secondary {
+            border: 1.5px solid var(--line-strong);
+            color: var(--ink);
+            background: rgba(255, 255, 255, 0.45);
+        }
+
+        .button-dark {
+            background: var(--ink);
+            color: #f8f4ea;
+            box-shadow: 0 12px 30px rgba(23, 23, 23, 0.2);
+        }
+
+        .hero-proof {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .proof-chip {
+            padding: 18px 18px;
+            border-radius: 18px;
+            border: 1px solid var(--line);
+            background: rgba(255, 255, 255, 0.44);
+        }
+
+        .proof-chip strong {
+            display: block;
+            font-size: 1.08rem;
+            margin-bottom: 6px;
+        }
+
+        .proof-chip span {
+            color: var(--muted);
+            font-size: 0.84rem;
+            line-height: 1.5;
+        }
+
+        /* ── Hero panel ── */
+        .hero-panel {
+            border-radius: var(--radius-xl);
+            padding: 22px;
+            display: grid;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-top {
+            display: grid;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .panel-top h2,
+        .section-card h3,
+        .timeline h3,
+        .cta-band h3 {
+            margin: 0;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.3;
+        }
+
+        .panel-top h2 {
+            font-size: 1.65rem;
+        }
+
+        .panel-top p {
+            margin: 8px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 0.94rem;
+        }
+
+        .ops-board {
+            display: grid;
+            gap: 10px;
+        }
+
+        .ops-row {
+            display: grid;
+            grid-template-columns: 128px 1fr auto;
+            gap: 14px;
+            align-items: center;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.58);
+            border: 1px solid rgba(20, 20, 20, 0.06);
+        }
+
+        .ops-row span,
+        .ops-row small,
+        .ops-row strong,
+        .mini-card p,
+        .section-card p,
+        .list li,
+        .timeline-step p,
+        .metric span,
+        .footnote {
+            color: var(--muted);
+        }
+
+        .ops-row > span:first-child {
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ops-row strong {
+            color: var(--ink);
+            font-size: 0.92rem;
+        }
+
+        .pill {
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .pill.warn {
+            background: rgba(180, 91, 49, 0.12);
+            color: var(--warn);
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .mini-card {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(21, 21, 21, 0.96);
+            color: #f6efe1;
+        }
+
+        .mini-card strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .mini-card p {
+            margin: 0;
+            color: rgba(246, 239, 225, 0.72);
+            line-height: 1.55;
+            font-size: 0.86rem;
+        }
+
+        /* ── Sections ── */
+        .section {
+            padding: 22px 0 28px;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 32px;
+            margin-bottom: 20px;
+        }
+
+        .section-head h2 {
+            margin: 0;
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .section-head p {
+            margin: 0;
+            max-width: 38ch;
+            color: var(--muted);
+            line-height: 1.65;
+            font-size: 1.02rem;
+            padding-left: 20px;
+            border-left: 3px solid var(--accent);
+            align-self: center;
+        }
+
+        .cards-3,
+        .cards-4,
+        .scenario-grid,
+        .engage-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .cards-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .cards-4 {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .scenario-grid,
+        .engage-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .section-card {
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            position: relative;
+            overflow: visible;
+        }
+
+        .section-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 0 auto auto;
+            width: 140px;
+            height: 140px;
+            background: radial-gradient(circle, rgba(14, 91, 76, 0.10), transparent 70%);
+            transform: translate(35%, -35%);
+            pointer-events: none;
+        }
+
+        .card-tag {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: rgba(14, 91, 76, 0.08);
+        }
+
+        .section-card h3 {
+            font-size: 1.42rem;
+            line-height: 1.3;
+            margin-bottom: 10px;
+        }
+
+        .section-card p {
+            margin: 0 0 16px;
+            line-height: 1.68;
+        }
+
+        .list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 10px;
+        }
+
+        .list li {
+            position: relative;
+            padding-left: 18px;
+            line-height: 1.55;
+        }
+
+        .list li::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0.7em;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            transform: translateY(-50%);
+        }
+
+        /* ── Social proof ── */
+        .proof-strip {
+            padding: 10px 0 22px;
+        }
+
+        .proof-strip-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 20px 0;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .proof-strip-inner span {
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            opacity: 0.55;
+        }
+
+        .proof-strip-label {
+            font-size: 0.74rem;
+            letter-spacing: 0.14em;
+            opacity: 0.4;
+        }
+
+        .proof-strip-items {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 36px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Timeline ── */
+        .timeline {
+            border-radius: var(--radius-xl);
+            padding: 28px;
+        }
+
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .timeline-step {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.52);
+            border: 1px solid rgba(20, 20, 20, 0.06);
+        }
+
+        .timeline-step em {
+            display: inline-block;
+            margin-bottom: 14px;
+            font-style: normal;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--warn);
+        }
+
+        .timeline-step strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.02rem;
+        }
+
+        .timeline-step p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .metric-band {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .metric {
+            padding: 18px;
+            border-radius: 20px;
+            background: rgba(21, 21, 21, 0.95);
+            color: #f6efe1;
+        }
+
+        .metric strong {
+            display: block;
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 2rem;
+            letter-spacing: -0.04em;
+            margin-bottom: 6px;
+        }
+
+        .metric span {
+            color: rgba(246, 239, 225, 0.7);
+            line-height: 1.45;
+            font-size: 0.88rem;
+        }
+
+        /* ── Engage cards ── */
+        .engage-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 100%;
+        }
+
+        .engage-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .engage-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(14, 91, 76, 0.14), rgba(25, 160, 126, 0.06));
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(14, 91, 76, 0.14);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .engage-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: var(--accent);
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .engage-card h3 {
+            font-size: 1.35rem !important;
+            line-height: 1.3 !important;
+        }
+
+        /* ── CTA ── */
+        .cta-band {
+            margin: 24px 0 56px;
+            border-radius: 30px;
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 28px;
+            align-items: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .cta-band::before {
+            content: "";
+            position: absolute;
+            left: -80px;
+            bottom: -80px;
+            width: 280px;
+            height: 280px;
+            background: radial-gradient(circle, rgba(14, 91, 76, 0.15), transparent 65%);
+            pointer-events: none;
+        }
+
+        .cta-eyebrow {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: rgba(14, 91, 76, 0.08);
+        }
+
+        .cta-band h3 {
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .cta-band p {
+            margin: 0;
+            max-width: 54ch;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .cta-right {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .cta-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .cta-examples {
+            text-align: right;
+            font-size: 0.84rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .cta-examples span {
+            display: block;
+            font-weight: 700;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 4px;
+            color: var(--ink);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 0 0 48px;
+        }
+
+        .footer-inner {
+            border-top: 1px solid rgba(23, 23, 23, 0.10);
+            padding: 24px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .footer-brand .dr {
+            font-family: "Playfair Display", serif;
+            font-weight: 700;
+            font-style: italic;
+            font-size: 0.95rem;
+            color: var(--accent);
+        }
+
+        .footer-brand .mclaw {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 0.92rem;
+            color: var(--ink);
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .footer-links a:hover {
+            color: var(--ink);
+        }
+
+        .footer-copy {
+            color: var(--muted);
+            font-size: 0.82rem;
+        }
+
+        /* ── Animations ── */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            animation: rise 720ms cubic-bezier(.2,.8,.2,1) forwards;
+        }
+
+        .delay-1 { animation-delay: 100ms; }
+        .delay-2 { animation-delay: 180ms; }
+        .delay-3 { animation-delay: 260ms; }
+        .delay-4 { animation-delay: 340ms; }
+
+        @keyframes rise {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1100px) {
+            .hero-grid,
+            .cta-band,
+            .cards-3,
+            .cards-4,
+            .scenario-grid,
+            .engage-grid,
+            .timeline-grid,
+            .metric-band {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .hero-grid,
+            .cta-band {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-actions {
+                justify-content: flex-start;
+            }
+
+            .cta-right {
+                align-items: flex-start;
+            }
+
+            .cta-examples {
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .nav-inner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 12px 18px;
+            }
+
+            .nav-cta {
+                display: none;
+            }
+
+            .section-head {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .section-head p {
+                border-left: 2px solid var(--accent);
+                padding-left: 16px;
+                max-width: none;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .hero,
+            .section {
+                padding-top: 26px;
+            }
+
+            .hero-copy::after {
+                display: none;
+            }
+
+            .section-card::before {
+                display: none;
+            }
+
+            .hero-copy,
+            .hero-panel,
+            .section-card,
+            .timeline,
+            .cta-band {
+                padding: 22px;
+            }
+
+            .hero-proof,
+            .mini-grid,
+            .cards-3,
+            .cards-4,
+            .scenario-grid,
+            .engage-grid,
+            .timeline-grid,
+            .metric-band {
+                grid-template-columns: 1fr;
+            }
+
+            .ops-row {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                max-width: none;
+                font-size: clamp(2rem, 8vw, 3rem);
+            }
+
+            .proof-strip-items {
+                justify-content: flex-start;
+                gap: 14px 24px;
+            }
+
+            .footer-links {
+                gap: 16px;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="nav-inner">
+            <a class="brand" href="#top" aria-label="Dr. MClaw home">
+                <div class="brand-mark">
+                    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 3C8.5 3 4 7.5 4 13c0 3.5 1.8 6.6 4.5 8.4L10 18l1.5 5.5c.8.3 1.6.5 2.5.5s1.7-.2 2.5-.5L18 18l1.5 3.4C22.2 19.6 24 16.5 24 13c0-5.5-4.5-10-10-10z" stroke="#8fdcc0" stroke-width="1.5" fill="none"/>
+                        <circle cx="10.5" cy="12" r="1.5" fill="#8fdcc0"/>
+                        <circle cx="17.5" cy="12" r="1.5" fill="#8fdcc0"/>
+                        <path d="M11 16c.8.8 2.2.8 3 0" stroke="#8fdcc0" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                        <path d="M14 3v-1M14 2c-1 0-1.8.8-1.8 1.8" stroke="#8fdcc0" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="brand-copy">
+                    <div class="brand-name">
+                        <span class="dr">Dr.</span>
+                        <span class="mclaw">MClaw</span>
+                    </div>
+                    <span class="tagline">Enterprise-Ready AI Automation</span>
+                </div>
+            </a>
+            <div class="nav-links">
+                <a href="#platform">Platform</a>
+                <a href="#scenarios">Use Cases</a>
+                <a href="#safety">Governance</a>
+                <a href="#deployment">Getting Started</a>
+            </div>
+            <a class="nav-cta" href="#contact">Contact Us</a>
+        </div>
+    </nav>
+
+    <main id="top" class="page-shell">
+        <section class="hero">
+            <div class="hero-grid">
+                <article class="hero-copy reveal">
+                    <div class="eyebrow">Enterprise Workflow Automation</div>
+                    <h1>Make enterprise <em>legacy workflow</em> AI&#8209;ready.</h1>
+                    <p class="hero-lead">
+                        Your legacy systems, manual handoffs, and spreadsheet-driven processes aren't going
+                        anywhere — but they can work ten times faster. Dr. MClaw turns the workflows your
+                        team already runs into AI-powered automations, so you can boost productivity today
+                        and make your infrastructure ready for the agentic future.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="button button-primary" href="#contact">See It in Action</a>
+                        <a class="button button-secondary" href="#platform">How It Works</a>
+                    </div>
+                    <div class="hero-proof">
+                        <div class="proof-chip reveal delay-1">
+                            <strong>Your team stays in control</strong>
+                            <span>Approvals and exceptions route to your people before anything executes.</span>
+                        </div>
+                        <div class="proof-chip reveal delay-2">
+                            <strong>Full audit trail</strong>
+                            <span>Every action logged and traceable — ready for compliance, not just IT.</span>
+                        </div>
+                        <div class="proof-chip reveal delay-3">
+                            <strong>Works with what you have</strong>
+                            <span>Connects to ERP, CRM, email, spreadsheets, and legacy systems already in place.</span>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="hero-panel reveal delay-2" aria-label="platform operations overview">
+                    <div class="panel-top">
+                        <div>
+                            <h2>Your legacy systems, upgraded with AI agents.</h2>
+                            <p>
+                                Dr. MClaw connects to the ERPs, spreadsheets, and tools your team
+                                already uses — then deploys AI agents that automate the repetitive work,
+                                enforce approval workflows, and keep humans in the loop.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="ops-board">
+                        <div class="ops-row">
+                            <span>Intake</span>
+                            <strong>Email, forms, scheduled jobs, chat, ERP exports</strong>
+                            <div class="pill">Unified</div>
+                        </div>
+                        <div class="ops-row">
+                            <span>AI Agents</span>
+                            <strong>Role-scoped actions with approval gates and fallback rules</strong>
+                            <div class="pill">Controlled</div>
+                        </div>
+                        <div class="ops-row">
+                            <span>Escalation</span>
+                            <strong>Exceptions route to your team for review before execution</strong>
+                            <div class="pill warn">Human-in-loop</div>
+                        </div>
+                    </div>
+
+                    <div class="mini-grid">
+                        <div class="mini-card">
+                            <strong>Agent guardrails</strong>
+                            <p>Each AI agent runs within defined scope, timeouts, and mandatory approval checkpoints.</p>
+                        </div>
+                        <div class="mini-card">
+                            <strong>Legacy connectors</strong>
+                            <p>Your existing systems wrapped in secure interfaces — agents interact through controlled APIs, never directly.</p>
+                        </div>
+                        <div class="mini-card">
+                            <strong>Audit &amp; compliance</strong>
+                            <p>Every agent decision and action recorded for control reviews, audit preparation, and process improvement.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Social proof strip -->
+        <div class="proof-strip page-shell reveal delay-3">
+            <div class="proof-strip-inner">
+                <span class="proof-strip-label">Designed for</span>
+                <div class="proof-strip-items">
+                    <span>Finance Ops</span>
+                    <span>Revenue Teams</span>
+                    <span>People Operations</span>
+                    <span>IT Service Management</span>
+                    <span>Procurement</span>
+                    <span>Back-Office Operations</span>
+                </div>
+            </div>
+        </div>
+
+        <section id="platform" class="section">
+            <div class="section-head reveal">
+                <h2>Built for the real world your team works in.</h2>
+                <p>
+                    No greenfield rewrite required. Dr. MClaw is designed for the environment most departments
+                    actually live in: partial APIs, aging internal tools, spreadsheet workarounds, approvals
+                    buried in email, and processes that cannot break.
+                </p>
+            </div>
+            <div class="cards-3">
+                <article class="section-card reveal delay-1">
+                    <div class="card-tag">Execution Layer</div>
+                    <h3>Automation with guardrails</h3>
+                    <p>
+                        Tasks run inside predefined boundaries with approval checkpoints, role-based access,
+                        and system-specific action templates. Nothing runs unchecked.
+                    </p>
+                    <ul class="list">
+                        <li>Scoped actions tied to team roles and permissions</li>
+                        <li>Timeouts, retries, and safe fallback defaults</li>
+                        <li>Structured outputs that feed directly into your systems</li>
+                    </ul>
+                </article>
+                <article class="section-card reveal delay-2">
+                    <div class="card-tag">Operations Dashboard</div>
+                    <h3>One view for your whole workflow</h3>
+                    <p>
+                        See what is running, what is waiting for approval, what failed, and what completed —
+                        across every automated process in your department.
+                    </p>
+                    <ul class="list">
+                        <li>Work intake from email, chat, schedulers, and forms</li>
+                        <li>Real-time status with human intervention points</li>
+                        <li>Exception queues your team can manage directly</li>
+                    </ul>
+                </article>
+                <article class="section-card reveal delay-3">
+                    <div class="card-tag">Integration Layer</div>
+                    <h3>Connects to what you already use</h3>
+                    <p>
+                        Dr. MClaw works with your existing portals, databases, ticketing systems, shared drives,
+                        and email — without requiring a systems overhaul.
+                    </p>
+                    <ul class="list">
+                        <li>API, database, browser, file, and message integrations</li>
+                        <li>Visual workflow mapping non-engineers can read</li>
+                        <li>Reusable connector packs per department</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section id="scenarios" class="section">
+            <div class="section-head reveal">
+                <h2>Workflows your team will recognize.</h2>
+                <p>
+                    These are the processes that consume disproportionate time, generate errors,
+                    and resist improvement — until now.
+                </p>
+            </div>
+            <div class="scenario-grid">
+                <article class="section-card reveal delay-1">
+                    <div class="card-tag">Finance Ops</div>
+                    <h3>Accounts payable reconciliation</h3>
+                    <p>
+                        Pull in supplier statements, ERP exports, bank references, and email attachments. Match records
+                        automatically, classify discrepancies, and surface only the exceptions that need human judgment.
+                    </p>
+                    <ul class="list">
+                        <li>Cut month-end close time on reconciliation tasks</li>
+                        <li>Audit-ready evidence for every match and exception</li>
+                        <li>Controlled write-backs into finance systems</li>
+                    </ul>
+                </article>
+                <article class="section-card reveal delay-2">
+                    <div class="card-tag">Revenue Operations</div>
+                    <h3>Order intake and approval routing</h3>
+                    <p>
+                        Extract order details from email, PDFs, forms, or chat. Validate pricing, check policy
+                        compliance, prepare system entries, and escalate anything out of bounds.
+                    </p>
+                    <ul class="list">
+                        <li>Faster order-to-entry cycle for your team</li>
+                        <li>Eliminate re-keying between CRM and ERP</li>
+                        <li>Every exception visible and tracked</li>
+                    </ul>
+                </article>
+                <article class="section-card reveal delay-3">
+                    <div class="card-tag">People Operations</div>
+                    <h3>Employee onboarding and transitions</h3>
+                    <p>
+                        Coordinate HR, IT, facilities, access management, and manager approvals through one
+                        workflow — with status tracking and mandatory checkpoints at every stage.
+                    </p>
+                    <ul class="list">
+                        <li>No more missed handoffs or orphaned accounts</li>
+                        <li>Mandatory approvals enforced before action</li>
+                        <li>Clear timeline of every step for compliance</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section id="safety" class="section">
+            <div class="timeline reveal">
+                <div class="section-head" style="margin-bottom: 0;">
+                    <h2>Governance is built in, not bolted on.</h2>
+                    <p>
+                        Every agent action is scoped, auditable, and reversible.
+                        Your team sees everything, approves what matters, and can stop anything.
+                    </p>
+                </div>
+                <div class="timeline-grid">
+                    <div class="timeline-step reveal delay-1">
+                        <em>01</em>
+                        <strong>Bounded execution</strong>
+                        <p>Every workflow runs within approved actions, defined scope, and enforced policies.</p>
+                    </div>
+                    <div class="timeline-step reveal delay-2">
+                        <em>02</em>
+                        <strong>Approval checkpoints</strong>
+                        <p>Critical actions pause for your team's sign-off — before execution, not after.</p>
+                    </div>
+                    <div class="timeline-step reveal delay-3">
+                        <em>03</em>
+                        <strong>Complete audit trail</strong>
+                        <p>Decisions, tool calls, inputs, outputs, and interventions — all traceable and exportable.</p>
+                    </div>
+                    <div class="timeline-step reveal delay-4">
+                        <em>04</em>
+                        <strong>Safe degradation</strong>
+                        <p>When confidence is low, Dr. MClaw falls back to rules, queues, or human review automatically.</p>
+                    </div>
+                </div>
+                <div class="metric-band">
+                    <div class="metric reveal delay-1">
+                        <strong>Scoped</strong>
+                        <span>Automation stays within role boundaries and connector policies you define.</span>
+                    </div>
+                    <div class="metric reveal delay-2">
+                        <strong>Reviewable</strong>
+                        <span>Every exception path visible to your operations and risk teams.</span>
+                    </div>
+                    <div class="metric reveal delay-3">
+                        <strong>Replayable</strong>
+                        <span>Full execution records for incident review, audits, and process optimization.</span>
+                    </div>
+                    <div class="metric reveal delay-4">
+                        <strong>Gradual</strong>
+                        <span>Start with one workflow. Expand when your team is ready — not before.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="deployment" class="section">
+            <div class="section-head reveal">
+                <h2>Start small. Prove it. Then expand.</h2>
+                <p>
+                    Dr. MClaw is designed for staged rollout. Pick the workflow costing your team the most
+                    time, run a controlled pilot, and scale the pattern once results are clear.
+                </p>
+            </div>
+            <div class="cards-4">
+                <article class="section-card reveal delay-1">
+                    <div class="card-tag">Week 1–2</div>
+                    <h3>Workflow mapping</h3>
+                    <p>Identify handoffs, systems, approval rules, exception types, and where your team's time actually goes.</p>
+                </article>
+                <article class="section-card reveal delay-2">
+                    <div class="card-tag">Week 3–4</div>
+                    <h3>Controlled pilot</h3>
+                    <p>Deploy one workflow with your team in the loop, explicit rollback conditions, and measurable targets.</p>
+                </article>
+                <article class="section-card reveal delay-3">
+                    <div class="card-tag">Month 2</div>
+                    <h3>Hardening</h3>
+                    <p>Stabilize integrations, refine exception handling, and build operational confidence with real data.</p>
+                </article>
+                <article class="section-card reveal delay-4">
+                    <div class="card-tag">Month 3+</div>
+                    <h3>Expand by pattern</h3>
+                    <p>Apply the same proven model to adjacent workflows across your department or neighboring teams.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="section-head reveal">
+                <h2>What a practical engagement produces.</h2>
+                <p>
+                    The work typically moves from workflow assessment to controlled rollout.
+                    Each phase produces something your operators, stakeholders, and risk teams can review.
+                </p>
+            </div>
+            <div class="engage-grid">
+                <article class="section-card engage-card reveal delay-1">
+                    <div class="engage-card-header">
+                        <div class="engage-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 4.5h6"/>
+                                <path d="M9.5 3h5a1.5 1.5 0 0 1 1.5 1.5V6H8V4.5A1.5 1.5 0 0 1 9.5 3Z"/>
+                                <path d="M8 5.5H6.5A1.5 1.5 0 0 0 5 7v11.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V7A1.5 1.5 0 0 0 17.5 5.5H16"/>
+                                <path d="M8.5 10h7"/>
+                                <path d="M8.5 13h7"/>
+                                <path d="M8.5 16h4.5"/>
+                            </svg>
+                        </div>
+                        <div class="card-tag">Assessment</div>
+                    </div>
+                    <h3>Workflow diagnostic</h3>
+                    <p>A clear map of one target workflow: where time goes, what breaks, where automation fits, and where it should not.</p>
+                    <ul class="list">
+                        <li>Process and system inventory</li>
+                        <li>Risk and approval map</li>
+                        <li>Automation feasibility report</li>
+                    </ul>
+                </article>
+                <article class="section-card engage-card reveal delay-2">
+                    <div class="engage-card-header">
+                        <div class="engage-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M13 3 6 13h5l-1 8 8-11h-5l1-7Z"/>
+                                <path d="M10.5 13h3"/>
+                            </svg>
+                        </div>
+                        <div class="card-tag">Pilot</div>
+                    </div>
+                    <h3>Working automation</h3>
+                    <p>A production-ready pilot with real integrations, exception queues, and measurable results your team can evaluate.</p>
+                    <ul class="list">
+                        <li>Connectors and policy setup</li>
+                        <li>Human review checkpoints</li>
+                        <li>Operations dashboard and logs</li>
+                    </ul>
+                </article>
+                <article class="section-card engage-card reveal delay-3">
+                    <div class="engage-card-header">
+                        <div class="engage-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 18.5h14"/>
+                                <path d="M7 16V11"/>
+                                <path d="M12 16V8"/>
+                                <path d="M17 16V5"/>
+                                <path d="M7 9.5 11.2 6l2.9 2.1L19 4.5"/>
+                            </svg>
+                        </div>
+                        <div class="card-tag">Scale</div>
+                    </div>
+                    <h3>Department-wide rollout</h3>
+                    <p>Proven automation patterns extended across workflows, with shared controls and hardened integrations.</p>
+                    <ul class="list">
+                        <li>Reusable connectors across teams</li>
+                        <li>Governance and audit operations</li>
+                        <li>Continuous optimization support</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section id="contact" class="section">
+            <div class="cta-band reveal">
+                <div class="cta-content">
+                    <div class="cta-eyebrow">Get started</div>
+                    <h3>See it work on your workflow.</h3>
+                    <p>
+                        Share the process, systems involved, approval steps, and where your team loses time.
+                        We will evaluate whether it looks like a fit, what a sensible first phase
+                        could be, and what information would be needed next.
+                    </p>
+                </div>
+                <div class="cta-right">
+                    <div class="cta-actions">
+                        <a class="button button-primary" href="mailto:hello@drmclaw.com">Schedule an Evaluation</a>
+                        <a class="button button-secondary" href="#top">Back to Top</a>
+                    </div>
+                    <div class="cta-examples">
+                        <span>Common starting points</span>
+                        Month-end reconciliation &bull; Order processing &bull; Employee onboarding &bull; Document routing &bull; Cross-system data entry
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="page-shell">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="dr">Dr.</span>
+                <span class="mclaw">MClaw</span>
+            </div>
+            <div class="footer-links">
+                <a href="#platform">Platform</a>
+                <a href="#scenarios">Use Cases</a>
+                <a href="#safety">Governance</a>
+                <a href="#contact">Contact</a>
+            </div>
+            <span class="footer-copy">&copy; 2026 Dr. MClaw. All rights reserved.</span>
+        </div>
+    </footer>
+</body>
+</html>
