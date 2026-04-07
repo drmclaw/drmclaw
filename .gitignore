@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+._*
+
+# Editors
+.idea/
+*.swp
+*.swo
+*~
+
+# VS Code local state
+.vscode/
+
+# Copilot agent runtime copies (source of truth is skills/copilot-agents/agents/)
+.github/agents/
+
+# Node
+node_modules/
+
+# Build outputs
+dist/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log

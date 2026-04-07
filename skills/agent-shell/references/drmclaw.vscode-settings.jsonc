@@ -1,0 +1,22 @@
+// drmclaw.vscode-settings.jsonc
+//
+// Recommended VS Code settings for AI agent coding workflows.
+// Merge relevant entries into your User or Workspace settings.
+//
+// This file is intentionally NOT named settings.json so it won't
+// accidentally overwrite your own VS Code configuration.
+//
+// Prerequisites:
+//   Copy drmclaw-agent-shell to ~/.local/bin/ (see skills/agent-shell/SKILL.md)
+//
+// If the agent shell is not installed, VS Code falls back to the default
+// terminal profile — everything still works, just without the optimized PATH.
+{
+  // --- Agent terminal ---
+  "chat.tools.terminal.terminalProfile.osx": {
+    "path": "~/.local/bin/drmclaw-agent-shell"
+  },
+
+  // Agents send multi-line commands frequently.
+  "terminal.integrated.enableMultiLinePasteWarning": "never"
+}
