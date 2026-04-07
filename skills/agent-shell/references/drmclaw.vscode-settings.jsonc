@@ -17,6 +17,11 @@
     "path": "~/.local/bin/drmclaw-agent-shell"
   },
 
+  // Tasks, debug terminals, and other automated spawns also use the agent shell.
+  "terminal.integrated.automationProfile.osx": {
+    "path": "~/.local/bin/drmclaw-agent-shell"
+  },
+
   // Agents send multi-line commands frequently.
   "terminal.integrated.enableMultiLinePasteWarning": "never"
 }

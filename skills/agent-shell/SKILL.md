@@ -44,10 +44,13 @@ chmod +x ~/.local/bin/drmclaw-agent-shell
 
 ### 2. Configure VS Code
 
-Merge the settings from [`references/drmclaw.vscode-settings.jsonc`](references/drmclaw.vscode-settings.jsonc) into your User or Workspace settings. The critical entry is:
+Merge the settings from [`references/drmclaw.vscode-settings.jsonc`](references/drmclaw.vscode-settings.jsonc) into your User or Workspace settings. The critical entries are:
 
 ```json
 "chat.tools.terminal.terminalProfile.osx": {
+  "path": "~/.local/bin/drmclaw-agent-shell"
+},
+"terminal.integrated.automationProfile.osx": {
   "path": "~/.local/bin/drmclaw-agent-shell"
 }
 ```
@@ -83,7 +86,7 @@ for i in 1 2 3; do /usr/bin/time -p sh -c 'echo exit | ~/.local/bin/drmclaw-agen
 | Symptom | Fix |
 |---|---|
 | Agent terminal can't find node/pnpm/python3 | Check `~/.local/bin/drmclaw-agent-shell` exists and is executable |
-| VS Code ignores the wrapper | Verify settings: `"chat.tools.terminal.terminalProfile.osx": { "path": "~/.local/bin/drmclaw-agent-shell" }` |
+| VS Code ignores the wrapper | Verify both settings: `chat.tools.terminal.terminalProfile.osx` and `terminal.integrated.automationProfile.osx` both point to `~/.local/bin/drmclaw-agent-shell` |
 | nvm node not found | Check `~/.nvm/alias/default` exists; alias chains like `lts/iron` are followed automatically; if unresolvable, the latest installed version is used as fallback |
 
 ## Files
