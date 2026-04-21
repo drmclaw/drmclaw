@@ -11,15 +11,21 @@ Shared VS Code Copilot custom agent definitions used across the drmclaw project.
 
 ### Code Review
 
-A read-only review specialist. Inspects diffs, changed files, or named code paths and returns findings in a severity-ranked format. Never edits files or mutates state.
+A read-only review specialist. Inspects diffs, changed files, or named code paths and returns severity-ranked findings. Never edits files.
 
 **When to use:** Reviewing pull requests, current changes, regressions, security issues, API misuse, or code quality risks.
 
 ### Implement and Review
 
-An implementation coordinator that completes a change, runs validation, then automatically invokes the Code Review agent as a subagent. Iterates until zero high/medium findings remain.
+A coordinator that delegates edits to `Implement Changes` and review passes to `Code Review`, looping until zero material findings remain.
 
 **When to use:** Any feature, bug fix, refactor, or documentation change where you want review built into the workflow.
+
+### Implement Changes
+
+A dedicated implementation worker. Makes focused edits per coordinator brief, runs validation, and returns a concise report.
+
+**When to use:** Called by `Implement and Review` — not invoked directly.
 
 ## Setup
 
@@ -50,4 +56,5 @@ If the invocation fails with "agent doesn't exist" or similar:
 |---|---|
 | `agents/code-review.agent.md` | Code Review agent definition |
 | `agents/implement-and-review.agent.md` | Implement and Review agent definition |
+| `agents/implement-changes.agent.md` | Implement Changes agent definition |
 
