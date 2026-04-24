@@ -1,6 +1,8 @@
 ---
 name: Code Review
 description: "Read-only review specialist. Inspects diffs, changed files, or named code paths and returns severity-ranked findings. Never edits files."
+model: gpt-5.4
+reasoningEffort: high
 tools:
   - read
   - search
