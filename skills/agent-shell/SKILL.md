@@ -29,7 +29,11 @@ Create an executable script at `~/.local/bin/drmclaw-agent-shell`. The script mu
 
 4. **nvm node resolution** — resolve the default node version **without sourcing `nvm.sh`** (it's too slow). Read `~/.nvm/alias/default` to get the alias. If the alias is indirect (e.g. `lts/iron`), follow one level by reading `~/.nvm/alias/<value>`. Strip any leading `v` prefix. Glob-match `~/.nvm/versions/node/v<version>*` and pick the latest. If alias resolution fails, fall back to the latest installed version under `~/.nvm/versions/node/`. Prepend the resolved `bin/` directory and export `NVM_DIR`.
 
-5. **Launch bash** — `exec /bin/bash --norc --noprofile`. Also set `SHELL=/bin/bash`.
+5. **Launch bash** — set `SHELL=/bin/bash`, set `BASH_SILENCE_DEPRECATION_WARNING=1`, then `exec /bin/bash --norc --noprofile "$@"`.
+
+Why `"$@"` matters: VS Code may pass shell arguments such as `-c`, login flags, or shell-integration startup parameters when it spawns automation and agent terminals. If the wrapper drops those args, the terminal can start incorrectly or terminate immediately.
+
+Why silence the deprecation warning: macOS's bundled bash prints a one-time "default interactive shell is now zsh" banner unless `BASH_SILENCE_DEPRECATION_WARNING=1` is set. That extra banner pollutes terminal startup output and can confuse log parsing or lightweight command wrappers.
 
 **Important constraints:**
 - The script runs under `set -e`. Every helper function and conditional must be safe — no `[ test ] && action` patterns (use `if/then/fi` instead). A failed test in `&&` kills the script.
@@ -87,6 +91,7 @@ for i in 1 2 3; do /usr/bin/time -p sh -c 'echo exit | ~/.local/bin/drmclaw-agen
 |---|---|
 | Agent terminal can't find node/pnpm/python3 | Check `~/.local/bin/drmclaw-agent-shell` exists and is executable |
 | VS Code ignores the wrapper | Verify both settings: `chat.tools.terminal.terminalProfile.osx` and `terminal.integrated.automationProfile.osx` both point to `~/.local/bin/drmclaw-agent-shell` |
+| VS Code terminal exits immediately / `drmclaw-agent-shell` exits with code 1 | Verify the wrapper forwards shell args with `exec /bin/bash --norc --noprofile "$@"`; dropping args breaks automation launches |
 | nvm node not found | Check `~/.nvm/alias/default` exists; alias chains like `lts/iron` are followed automatically; if unresolvable, the latest installed version is used as fallback |
 
 ## Files
