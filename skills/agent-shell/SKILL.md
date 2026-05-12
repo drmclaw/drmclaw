@@ -22,6 +22,7 @@ Create an executable script at `~/.local/bin/drmclaw-agent-shell`. The script mu
 2. **Prepend essential macOS directories** (only if they exist and aren't already in PATH):
    - `/opt/homebrew/bin`, `/opt/homebrew/sbin` (Apple Silicon Homebrew)
    - `/usr/local/bin` (Intel Homebrew / system)
+  - `/opt/homebrew/opt/mysql-client/bin` (stable Homebrew client tool path)
    - `~/.local/bin` (user-local scripts)
    - `~/.cargo/bin` (Rust toolchain)
 
@@ -29,11 +30,17 @@ Create an executable script at `~/.local/bin/drmclaw-agent-shell`. The script mu
 
 4. **nvm node resolution** — resolve the default node version **without sourcing `nvm.sh`** (it's too slow). Read `~/.nvm/alias/default` to get the alias. If the alias is indirect (e.g. `lts/iron`), follow one level by reading `~/.nvm/alias/<value>`. Strip any leading `v` prefix. Glob-match `~/.nvm/versions/node/v<version>*` and pick the latest. If alias resolution fails, fall back to the latest installed version under `~/.nvm/versions/node/`. Prepend the resolved `bin/` directory and export `NVM_DIR`.
 
-5. **Launch bash** — set `SHELL=/bin/bash`, set `BASH_SILENCE_DEPRECATION_WARNING=1`, then `exec /bin/bash --norc --noprofile "$@"`.
+5. **Sync stable system env from the real profile** — if `/Library/Developer/CommandLineTools` exists, export `DEVELOPER_DIR=/Library/Developer/CommandLineTools`. Only copy stable path/env facts from the real shell profile; do not source interactive shell init files.
+
+6. **Launch bash** — set `SHELL=/bin/bash`, set `BASH_SILENCE_DEPRECATION_WARNING=1`, then `exec /bin/bash --norc --noprofile "$@"`.
 
 Why `"$@"` matters: VS Code may pass shell arguments such as `-c`, login flags, or shell-integration startup parameters when it spawns automation and agent terminals. If the wrapper drops those args, the terminal can start incorrectly or terminate immediately.
 
 Why silence the deprecation warning: macOS's bundled bash prints a one-time "default interactive shell is now zsh" banner unless `BASH_SILENCE_DEPRECATION_WARNING=1` is set. That extra banner pollutes terminal startup output and can confuse log parsing or lightweight command wrappers.
+
+Why not source `.zshrc` / `.bash_profile`: agent terminals must stay deterministic and fast. Copy only the stable path facts the machine actually relies on, such as fixed Homebrew prefixes, framework Python bins, `mysql-client`, and `DEVELOPER_DIR`.
+
+Python policy: prefer exposing a single unambiguous `python3` on PATH. Do not add `conda` or a conda base `bin/` directory to the agent shell unless the machine explicitly depends on conda for routine CLI work and there is no stable direct `python3` available. The wrapper should not choose an environment manager on the agent's behalf.
 
 **Important constraints:**
 - The script runs under `set -e`. Every helper function and conditional must be safe — no `[ test ] && action` patterns (use `if/then/fi` instead). A failed test in `&&` kills the script.
