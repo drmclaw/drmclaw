@@ -1,6 +1,6 @@
 ---
 name: agent-shell
-description: "Fast, minimal shell wrapper that gives VS Code Copilot agent terminals access to dev tools (node, pnpm, python3, brew, cargo) on macOS without shell-init overhead. Use this skill when setting up a new development machine, configuring VS Code for AI agent workflows, troubleshooting agent terminal PATH issues, or when a Copilot agent terminal can't find node/pnpm/python3. Also use when someone asks about optimizing VS Code terminal startup time or making LLM coding agents more efficient."
+description: "Fast, minimal shell wrapper that gives VS Code Copilot agent terminals access to dev tools (node, pnpm, python3, brew, cargo) on macOS without shell-init overhead. Use this skill when setting up a new development machine, configuring VS Code for AI agent workflows, troubleshooting agent terminal PATH issues, terminal cwd drift, broken terminal stdout/prompt state after multiline agent commands, or when a Copilot agent terminal can't find node/pnpm/python3. Also use when someone asks about optimizing VS Code terminal startup time or making LLM coding agents more efficient."
 ---
 
 # Agent Shell
@@ -28,15 +28,31 @@ Create an executable script at `~/.local/bin/drmclaw-agent-shell`. The script mu
 
 3. **Python fallback** — if `/Library/Frameworks/Python.framework/Versions/` has numbered subdirectories, prepend the `bin/` of the latest version (by version sort). Homebrew python3 is already covered by step 2.
 
-4. **nvm node resolution** — resolve the default node version **without sourcing `nvm.sh`** (it's too slow). Read `~/.nvm/alias/default` to get the alias. If the alias is indirect (e.g. `lts/iron`), follow one level by reading `~/.nvm/alias/<value>`. Strip any leading `v` prefix. Glob-match `~/.nvm/versions/node/v<version>*` and pick the latest. If alias resolution fails, fall back to the latest installed version under `~/.nvm/versions/node/`. Prepend the resolved `bin/` directory and export `NVM_DIR`.
+4. **nvm node resolution** — resolve the default node version **without sourcing `nvm.sh`** (it's too slow). If `~/.nvm/versions/node` exists, read `~/.nvm/alias/default` to get the alias, follow one level of indirection from `~/.nvm/alias/<value>` if present, strip any leading `v`, glob-match `~/.nvm/versions/node/v<version>*`, and pick the latest. If alias resolution fails, fall back to the latest installed version under `~/.nvm/versions/node/`. Prepend the resolved `bin/` directory and export `NVM_DIR`.
 
 5. **Sync stable system env from the real profile** — if `/Library/Developer/CommandLineTools` exists, export `DEVELOPER_DIR=/Library/Developer/CommandLineTools`. Only copy stable path/env facts from the real shell profile; do not source interactive shell init files.
 
-6. **Launch bash** — set `SHELL=/bin/bash`, set `BASH_SILENCE_DEPRECATION_WARNING=1`, then `exec /bin/bash --norc --noprofile "$@"`.
+6. **Repair cwd from an explicit handoff env var** — if `AGENT_SHELL_CWD` is set and points to an existing directory, `cd "$AGENT_SHELL_CWD"` before launching bash. This protects agent terminals from a real failure mode where VS Code starts the wrapper from a temp directory like `/private/tmp`; without an explicit cwd handoff, relative paths can resolve under the wrong directory.
+
+7. **Repair terminal state before launch** — clear shell/debug variables that can leak from reused terminals, then normalize tty settings when possible. At minimum: `unset PROMPT_COMMAND`, `unset PS0`, export `TERM=dumb` only if the incoming `TERM` is empty, and run `stty sane 2>/dev/null || true`. This protects the agent shell from a real failure mode where an earlier multiline or half-interpreted command leaves the persistent terminal with a broken prompt or missing stdout.
+
+8. **Launch bash** — set `SHELL=/bin/bash`, set `BASH_SILENCE_DEPRECATION_WARNING=1`, then `exec /bin/bash --norc --noprofile "$@"`.
+
+Keep the wrapper self-describing: this skill is used during setup, but later debugging and runtime inspection often happen by opening `~/.local/bin/drmclaw-agent-shell` directly. Short comments beside non-obvious runtime safeguards such as `AGENT_SHELL_CWD`, prompt-state cleanup, and `stty sane` should remain in the shell script itself, not only here.
+
+Foreground, timed-out, and background-retrieved agent terminal calls all go through the same wrapper process. That means two constraints matter for agent reliability: preserve incoming shell args verbatim with `"$@"`, and keep startup output minimal and deterministic so VS Code can detect command start, completion, and idle states correctly.
+
+Add opt-in runtime introspection instead of startup banners. The wrapper should support `~/.local/bin/drmclaw-agent-shell --about` to print a short summary of its behavior and exit. This gives agents and humans a runtime way to inspect the wrapper without polluting normal command output.
 
 Why `"$@"` matters: VS Code may pass shell arguments such as `-c`, login flags, or shell-integration startup parameters when it spawns automation and agent terminals. If the wrapper drops those args, the terminal can start incorrectly or terminate immediately.
 
+Why use `AGENT_SHELL_CWD`: the wrapper cannot trust `PWD` alone, because the shell rewrites `PWD` to the process's actual cwd before the script runs. A dedicated env var set by the terminal profile is stable and lets the wrapper recover the intended workspace even when the launch cwd is `/private/tmp`.
+
+Why add a preserve-cwd escape hatch: when you manually invoke `~/.local/bin/drmclaw-agent-shell` from inside an existing agent terminal for debugging, the parent terminal may already export `AGENT_SHELL_CWD`. In that nested case, an unconditional `cd "$AGENT_SHELL_CWD"` hides the caller's real cwd. Support `DRMCLAW_AGENT_SHELL_PRESERVE_CWD=1` so manual nested tests can preserve the current directory without weakening normal agent launches.
+
 Why silence the deprecation warning: macOS's bundled bash prints a one-time "default interactive shell is now zsh" banner unless `BASH_SILENCE_DEPRECATION_WARNING=1` is set. That extra banner pollutes terminal startup output and can confuse log parsing or lightweight command wrappers.
+
+Why reset terminal state: agent sessions often reuse a persistent terminal after sending multiline snippets, heredocs, or partially echoed inline commands. If the shell is left in a bad tty or prompt state, later commands can appear to hang, lose stdout, or interleave old prompt text into new commands. The wrapper should start each spawned shell from a known-clean baseline instead of inheriting that damage.
 
 Why not source `.zshrc` / `.bash_profile`: agent terminals must stay deterministic and fast. Copy only the stable path facts the machine actually relies on, such as fixed Homebrew prefixes, framework Python bins, `mysql-client`, and `DEVELOPER_DIR`.
 
@@ -59,47 +75,85 @@ Merge the settings from [`references/drmclaw.vscode-settings.jsonc`](references/
 
 ```json
 "chat.tools.terminal.terminalProfile.osx": {
-  "path": "~/.local/bin/drmclaw-agent-shell"
+  "path": "~/.local/bin/drmclaw-agent-shell",
+  "env": {
+    "AGENT_SHELL_CWD": "${workspaceFolder}"
+  }
 },
 "terminal.integrated.automationProfile.osx": {
   "path": "~/.local/bin/drmclaw-agent-shell"
 }
 ```
 
+Keep `AGENT_SHELL_CWD` scoped to `chat.tools.terminal.terminalProfile.osx`. Tasks and debug sessions may intentionally set their own working directory, and forcing a workspace-root `cd` via `terminal.integrated.automationProfile.osx` can break those launches.
+
 ## Verification
 
-**You must run both checks before considering the skill complete.** If either fails, diagnose and fix the script until both pass.
+Do not treat shell syntax or a single happy-path command as sufficient validation. An agent-ready shell should be verified against the actual terminal behaviors that agents depend on: clean startup, deterministic cwd, reliable stdout, and correct handling of both short-lived and long-lived terminal calls.
 
-### 1. Tool resolution
+### 1. Verify environment resolution
 
-```sh
-echo 'which node pnpm python3 brew && echo AGENT_SHELL_OK' | ~/.local/bin/drmclaw-agent-shell
-```
+Confirm that the shell exposes the expected developer tools without sourcing interactive init files. The important outcome is not a specific command line, but that an agent terminal can immediately resolve the required toolchain from PATH and continue executing work without additional shell bootstrapping.
 
-**Pass:** Absolute paths for `node`, `pnpm`, `python3`, and `brew`, followed by `AGENT_SHELL_OK`. If a tool is missing, check it's installed on the system (e.g. `brew install pnpm`) before blaming the script.
+Pass criteria:
+- The shell resolves the expected toolchain consistently.
+- The resolved tools come from the intended stable locations.
+- The shell does not depend on `.zshrc`, `.bash_profile`, `nvm.sh`, or other interactive startup scripts.
 
-### 2. Startup speed
+### 2. Verify startup cost
 
-```sh
-for i in 1 2 3; do /usr/bin/time -p sh -c 'echo exit | ~/.local/bin/drmclaw-agent-shell >/dev/null 2>&1' 2>&1; done
-```
+Measure repeated startup time for fresh shell launches. Agent workflows create many terminal sessions, so shell overhead must stay low enough that the wrapper does not dominate command latency.
 
-**Pass:** Each run completes in under 200ms (`real 0.xx`). The script adds ~80-100ms over bare `bash --norc --noprofile` (~40ms) for PATH resolution. If startup exceeds 200ms, something in the script is spawning unnecessary subprocesses or hitting a slow filesystem path.
+Pass criteria:
+- Repeated launches stay comfortably below the team's acceptable per-terminal overhead budget.
+- The wrapper remains meaningfully close to bare `bash --norc --noprofile` startup time.
+- No unnecessary subprocesses, shell-init loads, or slow filesystem probes dominate launch latency.
 
-### Debugging failures
+### 3. Verify agent terminal call patterns
 
-1. Check the script is executable: `ls -la ~/.local/bin/drmclaw-agent-shell`
-2. Run with debug tracing: `echo 'which node' | sh -x ~/.local/bin/drmclaw-agent-shell`
-3. Fix the issue and re-run both checks.
+Test the shell the way an agent actually uses terminals. The wrapper should support all three agent-side call patterns:
+
+1. Foreground one-shot calls, where the agent waits for output immediately.
+2. Long-running calls started directly in the background, where the agent retrieves output later.
+3. Calls started in the foreground that time out and are then continued in the background.
+
+For each pattern, verify these properties:
+- Output appears promptly and without extra startup chatter.
+- The shell preserves incoming arguments exactly as the terminal tool supplied them.
+- Relative paths resolve from the intended working directory.
+- Long-running sessions remain inspectable after backgrounding or timeout handoff.
+- The wrapper does not emit banners, prompts, or debug text that would confuse later output retrieval.
+
+### 4. Verify recovery-oriented behaviors
+
+An agent-ready shell should also be tested against the failure modes agents actually hit during iterative terminal use.
+
+Test these scenarios conceptually:
+- Cwd repair: confirm the shell can recover the intended workspace when VS Code launches it from a temp directory.
+- Terminal-state repair: confirm reused terminals still print stdout and prompts cleanly after multiline snippets, heredocs, or partially interpreted commands.
+- Nested manual debugging: confirm there is a deliberate way to preserve the caller's current cwd when manually invoking the wrapper from inside an existing agent terminal.
+- Runtime introspection: confirm the wrapper exposes a quiet, opt-in way to explain itself at runtime without polluting normal command execution.
+
+### 5. Debugging approach
+
+When validation fails, debug in this order:
+
+1. Confirm the wrapper exists, is executable, and is the file VS Code is actually launching.
+2. Reproduce the failure with the smallest terminal pattern that still shows it: tool resolution, cwd drift, missing stdout, or background retrieval.
+3. Use shell tracing or targeted probes only long enough to identify the broken stage.
+4. Re-run the same behavior-scoped validation after each fix instead of switching to a different scenario.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| Agent terminal can't find node/pnpm/python3 | Check `~/.local/bin/drmclaw-agent-shell` exists and is executable |
-| VS Code ignores the wrapper | Verify both settings: `chat.tools.terminal.terminalProfile.osx` and `terminal.integrated.automationProfile.osx` both point to `~/.local/bin/drmclaw-agent-shell` |
-| VS Code terminal exits immediately / `drmclaw-agent-shell` exits with code 1 | Verify the wrapper forwards shell args with `exec /bin/bash --norc --noprofile "$@"`; dropping args breaks automation launches |
-| nvm node not found | Check `~/.nvm/alias/default` exists; alias chains like `lts/iron` are followed automatically; if unresolvable, the latest installed version is used as fallback |
+| Agent terminal cannot find expected tools | Diagnose whether the wrapper is being launched at all, then verify that PATH construction exposes the intended stable tool locations without relying on interactive shell init |
+| VS Code appears to ignore the wrapper | Diagnose the settings path first: make sure both the agent terminal profile and the automation profile point to the wrapper, and only then inspect the shell itself |
+| Terminal exits immediately or the wrapper fails at startup | Treat this as an argument-forwarding or `set -e` safety problem first: verify the wrapper preserves incoming shell args exactly and that every conditional/helper path is safe under non-zero test results |
+| Relative paths resolve from a temp directory instead of the workspace | Diagnose cwd handoff before PATH or shell syntax: confirm the agent terminal profile provides an explicit workspace cwd handoff and that only the chat terminal profile applies that repair |
+| Reused agent terminals show mangled prompts, partial old commands, or missing stdout | Treat this as terminal-state corruption: verify the wrapper resets prompt/debug variables, best-effort restores sane tty state, and starts the next shell from a clean baseline |
+| Manual nested wrapper tests keep jumping back to the workspace root | Diagnose inherited cwd handoff leakage: nested manual tests inside an existing agent terminal may need the preserve-cwd escape hatch so you can inspect the caller's actual directory |
+| nvm node resolution is wrong or missing | Diagnose alias resolution before changing PATH rules: confirm the default alias exists, indirect aliases resolve cleanly, and the fallback logic selects the latest installed nvm version when the alias is unusable |
 
 ## Files
 

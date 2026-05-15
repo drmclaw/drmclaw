@@ -14,7 +14,10 @@
 {
   // --- Agent terminal ---
   "chat.tools.terminal.terminalProfile.osx": {
-    "path": "~/.local/bin/drmclaw-agent-shell"
+    "path": "~/.local/bin/drmclaw-agent-shell",
+    "env": {
+      "AGENT_SHELL_CWD": "${workspaceFolder}"
+    }
   },
 
   // Tasks, debug terminals, and other automated spawns also use the agent shell.
